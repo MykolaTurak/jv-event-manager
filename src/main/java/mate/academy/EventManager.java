@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 public class EventManager {
     private final List<EventListener> eventListeners = new CopyOnWriteArrayList<>();
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
-    private boolean isShoutDown;
+    private volatile boolean isShoutDown;
 
     public EventManager() {
         this.isShoutDown = false;
@@ -35,7 +35,14 @@ public class EventManager {
             return;
         }
         for (EventListener eventListener: eventListeners) {
-            executorService.submit(() -> eventListener.onEvent(event));
+            executorService.submit(() -> {
+                try {
+                    eventListener.onEvent(event);
+                } catch (Exception e) {
+                    System.out.println("Can't notify listener: " + eventListener.toString());
+                }
+
+            });
         }
     }
 
